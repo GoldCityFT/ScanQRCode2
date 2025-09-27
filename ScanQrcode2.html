@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>สแกน QR Code</title>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<style>
+/* ปรับ body / html */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  font-family: 'Prompt', sans-serif;
+  background: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* QR Reader */
+#reader {
+  width: 100%;
+  height: 75%;
+  position: relative;
+  z-index: 0;
+  display:none;
+}
+
+#overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  display:none;
+}
+
+#message {
+  position: fixed; 
+  top: 20px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  color: white;
+  font-size: clamp(1rem, 4vw, 1.5rem);
+  font-weight: bold;
+  text-shadow: 0 0 5px black;
+  z-index: 2;
+  display:none;
+}
+
+/* popup เลือก Scan / Manual */
+#popupMode {
+  display:flex;
+  position:fixed;
+  top:0; left:0; right:0; bottom:0;
+  background:rgba(0,0,0,0.6);
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+}
+
+#popupModeContent {
+  background:#fff;
+  padding:30px 20px;
+  border-radius:20px;
+  text-align:center;
+  font-size: clamp(18px, 4vw, 28px);
+  font-weight:bold;
+  color:#333;
+  min-width:280px;
+  max-width:400px;
+  width:90%;
+  box-shadow:0 8px 25px rgba(0,0,0,0.5);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:15px; /* ระยะห่างระหว่าง element */
+}
+
+  #popupModeContent p {
+  margin-bottom: 10px;
+  font-size: clamp(16px, 4vw, 22px);
+  color: #444;
+}
+
+  
+#popupModeContent button {
+  width:100%;
+  padding:15px 20px;
+  border:none;
+  border-radius:12px;
+  background:#00C300;
+  color:white;
+  font-size:1.1rem;
+  cursor:pointer;
+  transition: all 0.2s ease-in-out;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:8px;
+}
+
+#popupModeContent button:hover { 
+  background:#009f2b; 
+  transform: scale(1.03);
+}
+
+/* popup แจ้งเตือน / Alert */
+#popupAlert {
+  display:none;
+  position:fixed;
+  top:0; left:0; right:0; bottom:0;
+  background:rgba(0,0,0,0.6);
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+}
+
+#popupAlertContent {
+  background:#fff;
+  padding:40px;
+  border-radius:20px;
+  text-align:center;
+  font-size: clamp(20px, 5vw, 32px);
+  font-weight:bold;
+  color:#333;
+  min-width:300px;
+  max-width:90%;
+  box-shadow:0 8px 25px rgba(0,0,0,0.5);
+}
+
+/* manual input */
+#manualInput {
+  display:none;
+  flex-direction: column;
+  align-items:center;
+  justify-content:center;
+  position: fixed;
+  top:50%;
+  left:50%;
+  transform: translate(-50%, -50%);
+  z-index:5;
+  width: 90%;
+  max-width: 450px;
+}
+
+#manualInput input {
+  padding:20px;
+  margin-top:10px;
+  border-radius:12px;
+  border:2px solid #ccc;
+  font-size:1.8rem;
+  width:100%;
+  box-sizing:border-box;
+  text-align:center;
+}
+
+#manualSubmit {
+  margin-top:20px;
+  padding:20px;
+  border:none;
+  border-radius:12px;
+  background:#00C300;
+  color:white;
+  font-size:1.8rem;
+  font-weight:bold;
+  cursor:pointer;
+  width:100%;
+  transition: all 0.2s ease-in-out;
+}
+#manualSubmit:hover { 
+  background:#009f2b;
+  transform: scale(1.05);
+}
+
+/* ปุ่มสลับโหมด */
+#modeSwitch {
+  position: fixed;
+  bottom: 20px;
+  right: 30px;
+  display: flex;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+  z-index: 2000;
+}
+
+#modeSwitch button {
+  padding: 20px 30px;
+  font-size: 1.6rem;
+  border: none;
+  cursor: pointer;
+  flex: 1;
+  color: white;
+  background: #2196F3;
+  transition: all 0.2s;
+}
+
+#modeSwitch button:hover {
+  background: #1976D2;
+  transform: scale(1.05);
+}
+
+#modeSwitch button.active {
+  background: #ff5722;
+  font-weight: bold;
+}
+</style>
+</head>
+<body>
+<div id="reader"></div>
+<div id="overlay"></div>
+<div id="message">สแกน QR Code ของคุณเป็นแนวตั้ง</div>
+
+<!-- popup เลือก Scan / Manual / Lost -->
+<div id="popupMode">
+  <div id="popupModeContent">
+<p style="font-size: 22px; font-weight: bold;">กรุณาเลือกวิธีกรอก QR Code</p>
+<button id="popupScanBtn">📷 <span>สแกน QR Code</span></button>
+<button id="popupManualBtn">✏️ <span>กรอกรหัสพัสดุด้วยตัวเอง</span></button>
+<button id="popupLostBtn">❌ <span>ไม่สามารถระบุรหัสพัสดุได้</span></button>
+  </div>
+</div>
+
+<!-- popup แจ้งเตือน -->
+<div id="popupAlert">
+  <div id="popupAlertContent">
+    <p id="popupAlertText">ข้อความแจ้งเตือน</p>
+  </div>
+</div>
+
+<!-- manual input -->
+<div id="manualInput">
+   <p style="color:white; font-size:1.4rem; margin-bottom:10px; text-align:center;">
+    กรุณากรอกรหัสพัสดุใต้บาร์โค้ด
+  </p>
+  <input type="text" id="manualCode" placeholder="กรอกโค้ดด้วยตัวเอง">
+  <button id="manualSubmit">ยืนยัน</button>
+</div>
+
+<!-- ปุ่มสลับโหมด -->
+<div id="modeSwitch">
+  <button id="cameraBtn">📷 Camera</button>
+  <button id="manualSwitchBtn">✏️ Manual</button>
+  
+</div>
+
+<script>
+let isScanned = false;
+let html5QrCode = null;
+let currentMode = null;
+
+// อัปเดต active state ของปุ่มสลับโหมด
+function updateModeSwitch(){
+  document.getElementById('cameraBtn').classList.toggle('active', currentMode==='scan');
+  document.getElementById('manualSwitchBtn').classList.toggle('active', currentMode==='manual');
+}
+
+// message = ข้อความแจ้งเตือน
+// redirect = true/false (default true)
+function showAlertPopup(message, redirect = true){
+  const popup = document.getElementById("popupAlert");
+  const text = document.getElementById("popupAlertText");
+  text.textContent = message;
+  popup.style.display = "flex";
+
+  setTimeout(()=>{
+    popup.style.display = "none";
+    isScanned = false; // reset flag
+
+    if(redirect){
+      window.location.href = "Form2.html";
+    }
+  }, 2000);
+}
+
+  // กดปุ่ม Lost → ไปหน้า Losstrackingcode.html
+document.getElementById('popupLostBtn').onclick = () => {
+  window.location.href = "Losstrackingcode2.html";
+};
+  
+// ใช้กับทั้ง QR และ Manual
+async function processCode(code){
+  if(!code) return;
+
+  // ดึงรายการที่เคยสแกนมา
+  const scannedCodes = JSON.parse(sessionStorage.getItem('scannedCodes') || '[]');
+
+  // ✅ เคยสแกนแล้ว
+  if(scannedCodes.includes(code)) {
+    showAlertPopup("⚠️ คุณเคยบันทึกข้อมูลนี้แล้ว", true);
+    return;
+  }
+
+  // ยังไม่เคย → บันทึกใหม่
+  scannedCodes.push(code);
+  sessionStorage.setItem('tracking', code);
+  sessionStorage.setItem('scannedCodes', JSON.stringify(scannedCodes));
+
+  // ส่งไป backend
+  try {
+    await fetch('/api/updateTracking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tracking: code })
+    });
+
+    // แจ้งเตือนครั้งเดียวหลัง update สำเร็จ
+    showAlertPopup("✅ บันทึกเรียบร้อย!", true);
+
+  } catch(err){
+    console.error('Update backend failed:', err);
+    showAlertPopup("❌ เกิดข้อผิดพลาดในการบันทึก");
+  }
+}
+
+// Scan mode
+async function scanQRCode() {
+  const scannedCodes = JSON.parse(sessionStorage.getItem('scannedCodes') || '[]');
+  if(scannedCodes.length > 0){
+    showAlertPopup("⚠️ คุณเคยสแกน QR Code นี้แล้ว");
+    return;
+  }
+
+  document.getElementById('popupMode').style.display = 'none';
+  document.getElementById('manualInput').style.display = 'none';
+  document.getElementById('reader').style.display = 'block';
+  document.getElementById('overlay').style.display = 'block';
+  document.getElementById('message').style.display = 'block';
+
+  currentMode = "scan";
+  updateModeSwitch();
+  isScanned = false;
+
+  main();
+}
+
+// Manual mode
+function manualInputMode() {
+  const scannedCodes = JSON.parse(sessionStorage.getItem('scannedCodes') || '[]');
+  if(scannedCodes.length > 0){
+    showAlertPopup("⚠️ คุณเคยกรอกข้อมูลนี้แล้ว");
+    return;
+  }
+
+  document.getElementById('popupMode').style.display = 'none';
+  document.getElementById('reader').style.display = 'none';
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('message').style.display = 'none';
+  document.getElementById('manualInput').style.display = 'flex';
+
+  document.getElementById('manualCode').value = '';
+  currentMode = "manual";
+  updateModeSwitch();
+}
+
+// manual submit
+document.getElementById('manualSubmit').onclick = async () => {
+  const code = document.getElementById('manualCode').value.trim();
+  if(!code){
+    // แทน alert เป็น Modal
+    const modal = document.getElementById('popupAlert');
+    const text = document.getElementById('popupAlertText');
+    text.textContent = "❌ กรุณากรอกโค้ดด้วยครับ";
+    modal.style.display = "flex";
+    setTimeout(()=>{
+      modal.style.display = "none";
+    }, 2000);
+    return;
+  }
+  await processCode(code);
+};
+
+
+// QR function
+async function main() {
+  if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+  const config = { fps:10, qrbox:(w,h)=>{ const s=w*0.6; return {width:s,height:s}; 
+    }
+    };
+  html5QrCode.start(
+    { facingMode: "environment" },
+    config,
+    async qrCodeMessage => {
+      if(isScanned) return;
+      isScanned = true;
+      await processCode(qrCodeMessage.trim());
+    },
+    errorMessage => { console.log("Scanning...", errorMessage); }
+  ).catch(err=>{
+    console.error("Camera start error:", err);
+    showAlertPopup("❌ ไม่สามารถเปิดกล้องได้", false);
+  });
+}
+
+// Event ปุ่ม
+document.getElementById('popupScanBtn').onclick = scanQRCode;
+document.getElementById('popupManualBtn').onclick = manualInputMode;
+document.getElementById('cameraBtn').onclick = scanQRCode;
+document.getElementById('manualSwitchBtn').onclick = manualInputMode;
+
+// toggle mode
+async function toggleMethod() {
+  if(currentMode === "scan"){
+    if(html5QrCode) await html5QrCode.stop().catch(()=>{});
+    manualInputMode();
+  } else {
+    scanQRCode();
+  }
+}
+
+// โหลดหน้า / reload
+window.addEventListener('pageshow', () => {
+  const scannedCodes = JSON.parse(sessionStorage.getItem('scannedCodes') || '[]');
+  if(scannedCodes.length > 0){
+    // ถ้าเคยสแกนแล้ว → แจ้งเตือน และไป Form
+    showAlertPopup("⚠️ คุณเคยบันทึกข้อมูลนี้แล้ว", true);
+  } else {
+    // ยังไม่เคยสแกน → แสดง popup เลือกโหมด
+    document.getElementById('popupMode').style.display = 'flex';
+  }
+});
+</script>
+</body>
+</html>
