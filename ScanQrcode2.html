@@ -278,9 +278,18 @@ async function fetchTrackingData(trackingCode){
 // message = ข้อความแจ้งเตือน
 // redirect = true/false (default true)
 function showAlertPopup(message, redirect = true){
+  // ปิด popupMode และ manualInput
+  document.getElementById('popupMode').style.display = 'none';
+  document.getElementById('manualInput').style.display = 'none';
+
+    // ประกาศตัวแปร popup และ text
   const popup = document.getElementById("popupAlert");
   const text = document.getElementById("popupAlertText");
+  
   text.textContent = message;
+  // ปิดปุ่มเก่า
+  const btnContainer = document.getElementById("popupAlertButtons");
+  btnContainer.innerHTML = "";
   popup.style.display = "flex";
 
   setTimeout(()=>{
@@ -300,6 +309,7 @@ document.getElementById('popupLostBtn').onclick = () => {
 
 
 function showPopupWithSelection(dataArray, callback){
+  
   const popup = document.getElementById("popupAlert");
   const text = document.getElementById("popupAlertText");
   const btnContainer = document.getElementById("popupAlertButtons");
