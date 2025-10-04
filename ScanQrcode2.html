@@ -253,6 +253,8 @@ let isScanned = false;
 let html5QrCode = null;
 let currentMode = null;
 const appsScriptURL = "https://script.google.com/macros/s/AKfycbxWOLfJ1MIeN_3RmZ1slHlSD6omtSmJUR1EemXyl8Gf_ykI8XY3oSLg75HNmH_fM9w/exec";
+
+
 // อัปเดต active state ของปุ่มสลับโหมด
 function updateModeSwitch(){
   document.getElementById('cameraBtn').classList.toggle('active', currentMode==='scan');
@@ -260,6 +262,7 @@ function updateModeSwitch(){
 }
 
 // fetch ข้อมูลจาก Apps Script
+// --- ฟังก์ชัน fetch ใช้งานภายใน processCode ---
 async function fetchTrackingData(trackingCode){
   try {
     const res = await fetch(`${appsScriptURL}?tracking=${encodeURIComponent(trackingCode)}`);
