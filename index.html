@@ -57,7 +57,7 @@ p
       if (liff.isLoggedIn() && !alreadyReset) {
         // กัน reload loop
        // localStorage.clear();
-       // sessionStorage.clear();
+        sessionStorage.clear();
         sessionStorage.setItem("alreadyReset", "true");
 
         // reload ใหม่แบบ clean
@@ -70,6 +70,7 @@ p
         return;
       }
 
+     
       // login แล้ว → ไปหน้า ScanQrcode.html
       window.location.href = "ScanQrcode2.html";
 
