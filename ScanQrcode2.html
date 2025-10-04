@@ -176,38 +176,7 @@ html, body {
   transform: scale(1.05);
 }
 
-/* ปุ่มสลับโหมด */
-#modeSwitch {
-  position: fixed;
-  bottom: 20px;
-  right: 30px;
-  display: flex;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-  z-index: 2000;
-}
 
-#modeSwitch button {
-  padding: 20px 30px;
-  font-size: 1.6rem;
-  border: none;
-  cursor: pointer;
-  flex: 1;
-  color: white;
-  background: #2196F3;
-  transition: all 0.2s;
-}
-
-#modeSwitch button:hover {
-  background: #1976D2;
-  transform: scale(1.05);
-}
-
-#modeSwitch button.active {
-  background: #ff5722;
-  font-weight: bold;
-}
 </style>
 </head>
 <body>
@@ -219,8 +188,7 @@ html, body {
 <div id="popupMode">
   <div id="popupModeContent">
 <p style="font-size: 22px; font-weight: bold;">กรุณาเลือกวิธีกรอก QR Code</p>
-<button id="popupScanBtn">📷 <span>สแกน QR Code</span></button>
-<button id="popupManualBtn">✏️ <span>กรอกรหัสพัสดุด้วยตัวเอง</span></button>
+<button id="popupScanOrManualBtn">📦 <span>สแกนหรือกรอกรหัสพัสดุ</span></button>
 <button id="popupLostBtn">❌ <span>ไม่สามารถระบุรหัสพัสดุได้</span></button>
   </div>
 </div>
@@ -236,31 +204,18 @@ html, body {
 <!-- manual input -->
 <div id="manualInput">
    <p style="color:white; font-size:1.4rem; margin-bottom:10px; text-align:center;">
-    กรุณากรอกรหัสพัสดุใต้บาร์โค้ด
+     หรือกรอกรหัสพัสดุด้านล่าง (ถ้าไม่สะดวกสแกน QR)
   </p>
   <input type="text" id="manualCode" placeholder="กรอกโค้ดด้วยตัวเอง">
   <button id="manualSubmit">ยืนยัน</button>
 </div>
 
-<!-- ปุ่มสลับโหมด -->
-<div id="modeSwitch">
-  <button id="cameraBtn">📷 Camera</button>
-  <button id="manualSwitchBtn">✏️ Manual</button>
-  
-</div>
 
 <script>
 let isScanned = false;
 let html5QrCode = null;
 let currentMode = null;
 const appsScriptURL = "https://script.google.com/macros/s/AKfycbxWOLfJ1MIeN_3RmZ1slHlSD6omtSmJUR1EemXyl8Gf_ykI8XY3oSLg75HNmH_fM9w/exec";
-
-
-// อัปเดต active state ของปุ่มสลับโหมด
-function updateModeSwitch(){
-  document.getElementById('cameraBtn').classList.toggle('active', currentMode==='scan');
-  document.getElementById('manualSwitchBtn').classList.toggle('active', currentMode==='manual');
-}
 
 // fetch ข้อมูลจาก Apps Script
 // --- ฟังก์ชัน fetch ใช้งานภายใน processCode ---
@@ -411,54 +366,30 @@ async function scanQRCode() {
   }
 
   document.getElementById('popupMode').style.display = 'none';
-  document.getElementById('manualInput').style.display = 'none';
   document.getElementById('reader').style.display = 'block';
   document.getElementById('overlay').style.display = 'block';
   document.getElementById('message').style.display = 'block';
 
+  // โชว์ Manual input ด้วย (จะซ่อนตอนไม่ใช้)
+  document.getElementById('manualInput').style.display = 'flex';
+  
   currentMode = "scan";
-  updateModeSwitch();
   isScanned = false;
 
-  main();
-}
-
-// Manual mode
-function manualInputMode() {
-  const scannedCodes = JSON.parse(sessionStorage.getItem('scannedCodes') || '[]');
-  if(scannedCodes.length > 0){
-    showAlertPopup("⚠️ คุณเคยกรอกข้อมูลนี้แล้ว");
+  //manual + submit
+document.getElementById('manualSubmit').onclick=async ()=>{
+    if(isScanned){
+    showAlertPopup("⚠️ คุณได้บันทึกข้อมูลแล้ว", false);
     return;
   }
-
-  document.getElementById('popupMode').style.display = 'none';
-  document.getElementById('reader').style.display = 'none';
-  document.getElementById('overlay').style.display = 'none';
-  document.getElementById('message').style.display = 'none';
-  document.getElementById('manualInput').style.display = 'flex';
-
-  document.getElementById('manualCode').value = '';
-  currentMode = "manual";
-  updateModeSwitch();
-}
-
-// manual submit
-document.getElementById('manualSubmit').onclick = async () => {
-  const code = document.getElementById('manualCode').value.trim();
-  if(!code){
-    // แทน alert เป็น Modal
-    const modal = document.getElementById('popupAlert');
-    const text = document.getElementById('popupAlertText');
-    text.textContent = "❌ กรุณากรอกโค้ดด้วยครับ";
-    modal.style.display = "flex";
-    setTimeout(()=>{
-      modal.style.display = "none";
-    }, 2000);
-    return;
-  }
+  const code=document.getElementById('manualCode').value.trim();
+  if(!code){showAlertPopup("❌ กรุณากรอกโค้ดด้วยครับ",false); return;}
   await processCode(code);
 };
 
+  main();
+  
+}
 
 // QR function
 async function main() {
@@ -479,22 +410,6 @@ async function main() {
     console.error("Camera start error:", err);
     showAlertPopup("❌ ไม่สามารถเปิดกล้องได้", false);
   });
-}
-
-// Event ปุ่ม
-document.getElementById('popupScanBtn').onclick = scanQRCode;
-document.getElementById('popupManualBtn').onclick = manualInputMode;
-document.getElementById('cameraBtn').onclick = scanQRCode;
-document.getElementById('manualSwitchBtn').onclick = manualInputMode;
-
-// toggle mode
-async function toggleMethod() {
-  if(currentMode === "scan"){
-    if(html5QrCode) await html5QrCode.stop().catch(()=>{});
-    manualInputMode();
-  } else {
-    scanQRCode();
-  }
 }
 
 // โหลดหน้า / reload
