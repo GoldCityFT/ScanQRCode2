@@ -412,6 +412,9 @@ async function main() {
   });
 }
 
+  // ปุ่มเลือก Scan / Manual
+document.getElementById('popupScanOrManualBtn').onclick = scanQRCode;
+  
 // โหลดหน้า / reload
 window.addEventListener('pageshow', () => {
   const scannedCodes = JSON.parse(sessionStorage.getItem('scannedCodes') || '[]');
@@ -423,6 +426,7 @@ window.addEventListener('pageshow', () => {
     document.getElementById('popupMode').style.display = 'flex';
   }
 });
+  
 </script>
 </body>
 </html>
