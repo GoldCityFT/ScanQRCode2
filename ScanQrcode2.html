@@ -328,7 +328,7 @@ function showPopupWithSelection(dataArray, callback){
   skipBtn.style.background = "#FF5722";
   skipBtn.style.color = "white";
   skipBtn.style.fontWeight = "bold";
-  skipBtn.textContent = "ไม่พบข้อมูล";
+  skipBtn.textContent = "ไม่มีข้อมูลที่ตรงกัน";
   skipBtn.onclick = () => {
     popup.style.display = "none";
     window.location.href = "Form2.html";
@@ -376,7 +376,7 @@ async function processCode(code){
       }
     });
   } else {
-    showAlertPopup("❌ ไม่พบข้อมูล", true);
+    showAlertPopup("❌ ไม่พบข้อมูลในระบบกรุณากรอกข้อมูล", true);
   }
 }
 
