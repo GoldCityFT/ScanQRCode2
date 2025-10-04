@@ -139,41 +139,42 @@ html, body {
   align-items:center;
   justify-content:center;
   position: fixed;
-  top:50%;
-  left:50%;
-  transform: translate(-50%, -50%);
+  bottom: 20px; /* อยู่ด้านล่าง */
+  left: 50%;
+  transform: translateX(-50%); /* กึ่งกลางแนวนอน */
   z-index:5;
   width: 90%;
-  max-width: 450px;
+  max-width: 400px;
 }
 
 #manualInput input {
-  padding:20px;
-  margin-top:10px;
-  border-radius:12px;
-  border:2px solid #ccc;
-  font-size:1.8rem;
-  width:100%;
-  box-sizing:border-box;
-  text-align:center;
+  padding: 12px;
+  margin-top: 8px;
+  border-radius: 10px;
+  border: 2px solid #ccc;
+  font-size: 1.4rem; /* เล็กลง */
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 #manualSubmit {
-  margin-top:20px;
-  padding:20px;
-  border:none;
-  border-radius:12px;
-  background:#00C300;
-  color:white;
-  font-size:1.8rem;
-  font-weight:bold;
-  cursor:pointer;
-  width:100%;
+  margin-top: 10px;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #00C300;
+  color: white;
+  font-size: 1.4rem; /* เล็กลง */
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
   transition: all 0.2s ease-in-out;
 }
-#manualSubmit:hover { 
-  background:#009f2b;
-  transform: scale(1.05);
+
+#manualSubmit:hover {
+  background: #009f2b;
+  transform: scale(1.03);
 }
 
 
