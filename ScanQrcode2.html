@@ -281,14 +281,13 @@ function showPopup(data, callback){
 
   if(data.OrderNo){
     text.innerHTML = `
-      <strong>OrderNo:</strong> ${data.OrderNo} <br>
-      <strong>ItemCode:</strong> ${data.ItemCode} <br>
+      <strong>CustomerName:</strong> ${data.CustomerName || '-'} <br>
+      <strong>BillingAddr:</strong> ${data.BillingAddr} <br>
       <strong>BillingPostCode:</strong> ${data.BillingPostCode} <br>
-      <strong>TrackingCode:</strong> ${data.TrackingCode} <br>
-      <strong>CustomerName:</strong> ${data.CustomerName}
+      <strong>TrackingCode:</strong> ${data.TrackingCode || '-'}
     `;
   } else {
-    text.textContent = data.CustomerName || "ไม่พบข้อมูล";
+    text.textContent = data.CustomerName || "ยังไม่มีข้อมูลในระบบกรุณากรอกข้อมูลเพิ่มเติมด้วย";
   }
 
   popup.style.display = "flex";
