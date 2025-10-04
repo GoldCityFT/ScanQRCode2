@@ -47,7 +47,7 @@ p
   <h1>ยินดีต้อนรับ! คุณลูกค้า</h1>
   <p>กำลังตรวจสอบ LINE login …</p>
   
-  <script>
+ <script>
   async function loadLiffSDK() {
     if (window.liff) return;
     return new Promise((resolve, reject) => {
@@ -64,38 +64,42 @@ p
       await loadLiffSDK();
       await liff.init({ liffId: "2008187346-LZW3ndvO" });
 
-      // เช็ค environment
+      // ตรวจสอบว่า LIFF พร้อมจริง
       if (!liff.isApiAvailable("getProfile")) {
-        throw "LIFF ไม่พร้อมใช้งาน";
+        throw "LIFF API ไม่พร้อมใช้งาน";
       }
 
+      // ป้องกัน reload loop
       const alreadyReset = sessionStorage.getItem("alreadyReset");
 
       if (liff.isLoggedIn() && !alreadyReset) {
-        sessionStorage.clear();
+        sessionStorage.clear();           // ล้าง session เก่า
         sessionStorage.setItem("alreadyReset", "true");
-        window.location.reload();
+        window.location.reload();         // รีเฟรชใหม่
         return;
       }
 
       if (!liff.isLoggedIn()) {
-        liff.login();
+        sessionStorage.clear();           // ล้าง session ก่อน login
+        liff.login();                     // login ใหม่
         return;
       }
 
-      // login สำเร็จ → หน้า ScanQrcode
+      // login สำเร็จ → ไปหน้า ScanQrcode
       window.location.href = "ScanQrcode2.html";
 
     } catch (err) {
       console.warn("LIFF init error:", err);
 
+      // ถ้า retry ยังไม่ถึง limit
       if (retry < 1) {
-        // retry อีกครั้งหลัง 500ms
+        console.log("ลอง init LIFF อีกครั้ง...");
         setTimeout(() => initLiffSafe(retry + 1), 500);
       } else {
-        // ถ้า fail ต่อเนื่อง ให้ redirect แบบไม่พึ่ง LIFF
-        console.error("ไม่สามารถ init LIFF ได้");
-        alert("เกิดข้อผิดพลาด LIFF init ลองโหลดหน้าใหม่อีกครั้ง");
+        // ถ้า fail ต่อเนื่อง → รีเฟรชใหม่แบบอัตโนมัติ
+        console.log("LIFF init fail หลัง retry → ล้าง session + reload หน้าใหม่");
+        sessionStorage.clear();
+        window.location.reload();
       }
     }
   }
