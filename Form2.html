@@ -291,20 +291,33 @@ const result = await res.json();
    // โหลดข้อมูลจาก ScanQrcode2 (fallback)
 
 if(result.success && result.data.length > 0){
-  // ใส่ข้อมูลจาก GAS
   const sheetData = result.data[0];
-  if(sheetData.DisplayName) document.querySelector("input[name='DisplayName']").value = sheetData.DisplayName;
-  if(sheetData.Location) document.querySelector("input[name='Location']").value = sheetData.Location;
-  if(sheetData.PostCode) document.querySelector("input[name='PostCode']").value = sheetData.PostCode;
+  
+  // ตรวจสอบ field จริง ๆ ก่อนใช้
+  const hasValidData = sheetData.DisplayName || sheetData.PostCode || sheetData.Location;
+  
+  if(hasValidData){
+    if(sheetData.DisplayName) document.querySelector("input[name='DisplayName']").value = sheetData.DisplayName;
+    if(sheetData.Location) document.querySelector("input[name='Location']").value = sheetData.Location;
+    if(sheetData.PostCode) document.querySelector("input[name='PostCode']").value = sheetData.PostCode;
+  } else {
+    // fallback ไป ScanQrcode2
+    useFallback();
+  }
 } else {
-      // ใส่ fallback เฉพาะตอน GAS ไม่มีข้อมูล
-      const fallbackData = JSON.parse(sessionStorage.getItem('selectedRow') || '{}');
-      if(fallbackData && Object.keys(fallbackData).length > 0){
-        document.getElementById('Tracking').value = fallbackData.TrackingCode || '';
-        document.querySelector("input[name='DisplayName']").value = fallbackData.CustomerName || '';
-        document.querySelector("input[name='PostCode']").value = fallbackData.BillingPostCode || '';
-        document.querySelector("input[name='Location']").value = fallbackData.BillingAddr || '';
-      }
+  useFallback();
+}
+
+// ฟังก์ชัน fallback
+function useFallback(){
+  const fallbackData = JSON.parse(sessionStorage.getItem('selectedRow') || '{}');
+  if(fallbackData && Object.keys(fallbackData).length > 0){
+    document.getElementById('Tracking').value = fallbackData.TrackingCode || '';
+    document.querySelector("input[name='DisplayName']").value = fallbackData.CustomerName || '';
+    document.querySelector("input[name='PostCode']").value = fallbackData.BillingPostCode || '';
+    document.querySelector("input[name='Location']").value = fallbackData.BillingAddr || '';
+  }
+}
     }
   } catch(err){
     console.error("Error fetching last data:", err);
