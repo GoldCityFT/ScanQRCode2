@@ -411,8 +411,18 @@ async function scanQRCode() {
     return;
   }
 
+  document.getElementById('popupMode').style.display = 'none';
+  document.getElementById('manualInput').style.display = 'none';
+  const reader = document.getElementById('reader');
+  reader.style.display = 'block';
+  reader.style.width = '100vw';
+  reader.style.height = '100vh';
 
+  document.getElementById('overlay').style.display = 'block';
+  document.getElementById('overlay').style.width = '100vw';
+  document.getElementById('overlay').style.height = '100vh';
 
+  document.getElementById('message').style.display = 'block';
   currentMode = "scan";
   updateModeSwitch();
   isScanned = false;
@@ -428,8 +438,15 @@ function manualInputMode() {
     return;
   }
 
- 
-  document.getElementById('manualCode').value = '';
+  document.getElementById('popupMode').style.display = 'none';
+  document.getElementById('reader').style.display = 'none';
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('message').style.display = 'none';
+
+  const manual = document.getElementById('manualInput');
+  manual.style.display = 'flex';
+  manual.style.width = '100vw';
+  manual.style.height = '100vh';
   currentMode = "manual";
   updateModeSwitch();
 }
