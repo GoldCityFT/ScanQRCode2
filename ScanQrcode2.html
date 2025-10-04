@@ -1,3 +1,4 @@
+กลับมาหน้า Scan QRcode 
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -229,6 +230,7 @@ html, body {
 <div id="popupAlert">
   <div id="popupAlertContent">
     <p id="popupAlertText">ข้อความแจ้งเตือน</p>
+    <div id="popupAlertButtons"></div> <!-- สำหรับปุ่มเลือก Customer -->
   </div>
 </div>
 
@@ -252,6 +254,8 @@ html, body {
 let isScanned = false;
 let html5QrCode = null;
 let currentMode = null;
+const appsScriptURL = "https://script.google.com/macros/s/AKfycbxWOLfJ1MIeN_3RmZ1slHlSD6omtSmJUR1EemXyl8Gf_ykI8XY3oSLg75HNmH_fM9w/exec";
+
 
 // อัปเดต active state ของปุ่มสลับโหมด
 function updateModeSwitch(){
@@ -259,12 +263,34 @@ function updateModeSwitch(){
   document.getElementById('manualSwitchBtn').classList.toggle('active', currentMode==='manual');
 }
 
+// fetch ข้อมูลจาก Apps Script
+// --- ฟังก์ชัน fetch ใช้งานภายใน processCode ---
+async function fetchTrackingData(trackingCode){
+  try {
+    const res = await fetch(`${appsScriptURL}?tracking=${encodeURIComponent(trackingCode)}`);
+    const data = await res.json();
+    return data;
+  } catch(err) {
+    console.error("Fetch error:", err);
+    return { success:false, data:[] };
+  }
+}
+
 // message = ข้อความแจ้งเตือน
 // redirect = true/false (default true)
 function showAlertPopup(message, redirect = true){
+  // ปิด popupMode และ manualInput
+  document.getElementById('popupMode').style.display = 'none';
+  document.getElementById('manualInput').style.display = 'none';
+
+    // ประกาศตัวแปร popup และ text
   const popup = document.getElementById("popupAlert");
   const text = document.getElementById("popupAlertText");
+  
   text.textContent = message;
+  // ปิดปุ่มเก่า
+  const btnContainer = document.getElementById("popupAlertButtons");
+  btnContainer.innerHTML = "";
   popup.style.display = "flex";
 
   setTimeout(()=>{
@@ -281,42 +307,102 @@ function showAlertPopup(message, redirect = true){
 document.getElementById('popupLostBtn').onclick = () => {
   window.location.href = "Losstrackingcode2.html";
 };
+
+
+function showPopupWithSelection(dataArray, callback){
+  
+  const popup = document.getElementById("popupAlert");
+  const text = document.getElementById("popupAlertText");
+  const btnContainer = document.getElementById("popupAlertButtons");
+
+  // ข้อความนำ
+  text.textContent = "กรุณาเลือกข้อมูลของท่าน";
+
+  // ล้างปุ่มเก่า
+  btnContainer.innerHTML = "";
+
+  // ปุ่มสำหรับแต่ละ Customer
+  dataArray.forEach((row) => {
+    const btn = document.createElement("button");
+    btn.style.margin = "5px 0";
+    btn.style.width = "100%";
+    btn.style.padding = "10px";
+    btn.style.fontSize = "1rem";
+
+     // ใช้ชื่อ field จริงจาก Apps Script
+    const name = row.CustomerName || row.Name || '';
+    const code = row.BillingPostCode || row.PostCode || '';
+    const tracking = row.TrackingCode || row.Code || '';
+    
+   btn.textContent = `${name}  ${code}  ${tracking}`;
+    btn.onclick = () => {
+    popup.style.display = "none";
+    if(callback) callback(row);
+  };
+  btnContainer.appendChild(btn);
+});
+
+  // ปุ่ม "ไม่พบข้อมูล"
+  const skipBtn = document.createElement("button");
+  skipBtn.style.marginTop = "10px";
+  skipBtn.style.width = "100%";
+  skipBtn.style.padding = "10px";
+  skipBtn.style.background = "#FF5722";
+  skipBtn.style.color = "white";
+  skipBtn.style.fontWeight = "bold";
+  skipBtn.textContent = "ไม่พบข้อมูล";
+  skipBtn.onclick = () => {
+    popup.style.display = "none";
+    window.location.href = "Form2.html";
+  };
+  btnContainer.appendChild(skipBtn);
+
+  popup.style.display = "flex";
+  }
   
 // ใช้กับทั้ง QR และ Manual
 async function processCode(code){
   if(!code) return;
 
-  // ดึงรายการที่เคยสแกนมา
   const scannedCodes = JSON.parse(sessionStorage.getItem('scannedCodes') || '[]');
 
-  // ✅ เคยสแกนแล้ว
   if(scannedCodes.includes(code)) {
     showAlertPopup("⚠️ คุณเคยบันทึกข้อมูลนี้แล้ว", true);
     return;
   }
 
-  // ยังไม่เคย → บันทึกใหม่
+  // บันทึกรหัสที่สแกนแล้ว แต่ยังไม่ส่งไป backend
   scannedCodes.push(code);
   sessionStorage.setItem('tracking', code);
   sessionStorage.setItem('scannedCodes', JSON.stringify(scannedCodes));
 
-  // ส่งไป backend
-  try {
-    await fetch('/api/updateTracking', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tracking: code })
+  // --- ดึงข้อมูลจาก App Script ---
+  const data = await fetchTrackingData(code);
+
+  if(data.success && data.data.length > 0){
+    // --- แสดง popup ให้เลือกข้อมูล ---
+    showPopupWithSelection(data.data, async (selectedRow) => {
+      // เมื่อผู้ใช้เลือกแถว → ส่งไป backend
+      try {
+        await fetch('/api/updateTracking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tracking: selectedRow.TrackingCode })
+        });
+        // --- แสดง popup บันทึกสำเร็จ ---
+        showAlertPopup("✅ บันทึกเรียบร้อย!", true);
+      } catch(err){
+        console.error('Update backend failed:', err);
+        showAlertPopup("❌ เกิดข้อผิดพลาดในการบันทึก");
+      }
     });
-
-    // แจ้งเตือนครั้งเดียวหลัง update สำเร็จ
-    showAlertPopup("✅ บันทึกเรียบร้อย!", true);
-
-  } catch(err){
-    console.error('Update backend failed:', err);
-    showAlertPopup("❌ เกิดข้อผิดพลาดในการบันทึก");
+  } else {
+    showAlertPopup("❌ ไม่พบข้อมูล", true);
   }
 }
 
+
+  
 // Scan mode
 async function scanQRCode() {
   const scannedCodes = JSON.parse(sessionStorage.getItem('scannedCodes') || '[]');
