@@ -275,30 +275,6 @@ async function fetchTrackingData(trackingCode){
   }
 }
 
-// แสดง popup ข้อมูล
-function showPopup(data, callback){
-  const popup = document.getElementById("popupAlert");
-  const text = document.getElementById("popupAlertText");
-
-  if(data.TrackingCode){
-    text.innerHTML = `
-      <strong>CustomerName:</strong> ${data.CustomerName || '-'} <br>
-      <strong>BillingAddr:</strong> ${data.BillingAddr} <br>
-      <strong>BillingPostCode:</strong> ${data.BillingPostCode} <br>
-      <strong>TrackingCode:</strong> ${data.TrackingCode || '-'}
-    `;
-  } else {
-    text.textContent = data.CustomerName || "ยังไม่มีข้อมูลในระบบกรุณากรอกข้อมูลเพิ่มเติมด้วย";
-  }
-
-  popup.style.display = "flex";
-
-  setTimeout(()=>{
-    popup.style.display = "none";
-    if(callback) callback();
-  }, 3000);
-}
-  
 // message = ข้อความแจ้งเตือน
 // redirect = true/false (default true)
 function showAlertPopup(message, redirect = true){
@@ -330,13 +306,6 @@ function showPopupWithSelection(dataArray, callback){
   // ล้างปุ่มเก่า
   btnContainer.innerHTML = "";
 
-  // สร้าง label แนะนำ
-  const label = document.createElement("p");
-  label.textContent = "กรุณาเลือกชื่อของท่าน";
-  label.style.fontWeight = "bold";
-  label.style.marginBottom = "10px";
-  btnContainer.appendChild(label);
-
   // ปุ่มสำหรับแต่ละ Customer
   dataArray.forEach((row) => {
     const btn = document.createElement("button");
@@ -363,15 +332,13 @@ function showPopupWithSelection(dataArray, callback){
   skipBtn.textContent = "ไม่มีชื่อที่ตรงกัน → ข้ามไป Form2";
   skipBtn.onclick = () => {
     popup.style.display = "none";
-    window.location.href = "Form2.html";
+    window.location.href = "Form2.html"; // ไปหน้า Form2
   };
   btnContainer.appendChild(skipBtn);
 
   // แสดง popup
   popup.style.display = "flex";
 }
-
-
   
 // ใช้กับทั้ง QR และ Manual
 async function processCode(code){
