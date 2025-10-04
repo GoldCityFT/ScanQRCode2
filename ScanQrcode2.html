@@ -365,28 +365,18 @@ async function processCode(code){
   sessionStorage.setItem('tracking', code);
   sessionStorage.setItem('scannedCodes', JSON.stringify(scannedCodes));
 
-  // --- ดึงข้อมูลจาก App Script ---
-  const data = await fetchTrackingData(code);
-
-  if(data.success && data.data.length > 0){
-    // --- แสดง popup ให้เลือกข้อมูล ---
-    showPopupWithSelection(data.data, async (selectedRow) => {
-      // เมื่อผู้ใช้เลือกแถว → ส่งไป backend
-      try {
-        await fetch('/api/updateTracking', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tracking: selectedRow.TrackingCode })
-        });
-        // --- แสดง popup บันทึกสำเร็จ ---
-        showAlertPopup("✅ บันทึกเรียบร้อย!", true);
-      } catch(err){
-        console.error('Update backend failed:', err);
-        showAlertPopup("❌ เกิดข้อผิดพลาดในการบันทึก");
-      }
+    // ส่งไป backend โดยตรง
+  try {
+    await fetch('/api/updateTracking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tracking: code }) // <-- ใช้ code ตรงนี้
     });
-  } else {
-    showAlertPopup("❌ ไม่พบข้อมูล", true);
+    // แสดง popup บันทึกสำเร็จแล้วไป Form2.html
+    showAlertPopup("✅ บันทึกเรียบร้อย!", true);
+  } catch(err){
+    console.error('Update backend failed:', err);
+    showAlertPopup("❌ เกิดข้อผิดพลาดในการบันทึก", true);
   }
 }
 
