@@ -411,11 +411,7 @@ async function scanQRCode() {
     return;
   }
 
-  document.getElementById('popupMode').style.display = 'none';
-  document.getElementById('manualInput').style.display = 'none';
-  document.getElementById('reader').style.display = 'block';
-  document.getElementById('overlay').style.display = 'block';
-  document.getElementById('message').style.display = 'block';
+
 
   currentMode = "scan";
   updateModeSwitch();
@@ -432,12 +428,7 @@ function manualInputMode() {
     return;
   }
 
-  document.getElementById('popupMode').style.display = 'none';
-  document.getElementById('reader').style.display = 'none';
-  document.getElementById('overlay').style.display = 'none';
-  document.getElementById('message').style.display = 'none';
-  document.getElementById('manualInput').style.display = 'flex';
-
+ 
   document.getElementById('manualCode').value = '';
   currentMode = "manual";
   updateModeSwitch();
