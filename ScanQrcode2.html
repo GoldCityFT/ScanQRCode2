@@ -211,6 +211,29 @@ html, body {
   <button id="manualSubmit">ยืนยัน</button>
 </div>
 
+  <!-- popup loading -->
+<div id="popupLoading" style="
+    display:none;
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: rgba(0,0,0,0.6);
+    justify-content:center;
+    align-items:center;
+    z-index:99999;
+">
+  <div style="
+      background:#fff;
+      padding:30px 20px;
+      border-radius:20px;
+      font-size:1.5rem;
+      font-weight:bold;
+      text-align:center;
+      color:#333;
+      box-shadow:0 8px 25px rgba(0,0,0,0.5);
+  ">
+    ⏳ กำลังประมวลผลข้อมูล...
+  </div>
+</div>
 
 <script>
 let isScanned = false;
@@ -383,9 +406,21 @@ document.getElementById('manualSubmit').onclick=async ()=>{
     showAlertPopup("⚠️ คุณได้บันทึกข้อมูลแล้ว", false);
     return;
   }
-  const code=document.getElementById('manualCode').value.trim();
-  if(!code){showAlertPopup("❌ กรุณากรอกโค้ดด้วยครับ",false); return;}
-  await processCode(code);
+  const code = document.getElementById('manualCode').value.trim();
+  if(!code){
+    showAlertPopup("❌ กรุณากรอกโค้ดด้วยครับ", false);
+    return;
+  }
+
+  // แสดง popup กำลังประมวลผล
+  showLoadingPopup(true);
+
+  try{
+    await processCode(code);
+  } finally {
+    // ปิด popup หลังทำงานเสร็จ
+    showLoadingPopup(false);
+  }
 };
 
   main();
@@ -415,6 +450,12 @@ async function main() {
 
   // ปุ่มเลือก Scan / Manual
 document.getElementById('popupScanOrManualBtn').onclick = scanQRCode;
+
+  function showLoadingPopup(show = true){
+  document.getElementById('popupLoading').style.display = show ? 'flex' : 'none';
+}
+
+  
   
 // โหลดหน้า / reload
 window.addEventListener('pageshow', () => {
