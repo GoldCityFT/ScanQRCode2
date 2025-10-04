@@ -47,41 +47,57 @@ p
   <h1>ยินดีต้อนรับ! คุณลูกค้า</h1>
   <p>กำลังตรวจสอบ LINE login …</p>
   
- <script>
-  async function main() {
-    try {
-      await liff.init({ liffId: "2008187346-LZW3ndvO" }); // 2007956346-G5BmkAQl
-
-      const alreadyReset = sessionStorage.getItem("alreadyReset");
-
-      if (liff.isLoggedIn() && !alreadyReset) {
-        // กัน reload loop
-       // localStorage.clear();
-        sessionStorage.clear();
-        sessionStorage.setItem("alreadyReset", "true");
-
-        // reload ใหม่แบบ clean
-        window.location.reload();
-        return;
-      }
-
-      if (!liff.isLoggedIn()) {
-        liff.login();
-        return;
-      }
-
-     
-      // login แล้ว → ไปหน้า ScanQrcode.html
-      window.location.href = "ScanQrcode2.html";
-
-    } catch (err) {
-      console.error("LIFF init error:", err);
-      alert("เกิดข้อผิดพลาด LIFF init");
+  <script>
+    // โหลด LIFF SDK แบบ dynamic และรอให้โหลดเสร็จก่อน
+    function loadLiffSDK() {
+      return new Promise((resolve, reject) => {
+        if (window.liff) return resolve();
+        const script = document.createElement('script');
+        script.src = "https://static.line-scdn.net/liff/edge/2/sdk.js";
+        script.onload = () => resolve();
+        script.onerror = () => reject("โหลด LIFF SDK ไม่สำเร็จ");
+        document.head.appendChild(script);
+      });
     }
-  }
 
-  window.onload = main;
-</script>
+    async function initLiff(retryCount = 0) {
+      try {
+        await loadLiffSDK();
+        await liff.init({ liffId: "2008187346-LZW3ndvO" });
+
+        const alreadyReset = sessionStorage.getItem("alreadyReset");
+
+        if (liff.isLoggedIn() && !alreadyReset) {
+          // ป้องกัน reload loop
+          sessionStorage.clear();
+          sessionStorage.setItem("alreadyReset", "true");
+          window.location.reload();
+          return;
+        }
+
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
+
+        // login แล้ว → ไปหน้า ScanQrcode
+        window.location.href = "ScanQrcode2.html";
+
+      } catch (err) {
+        console.error("LIFF init error:", err);
+
+        // retry 1 รอบ ถ้ายัง fail ให้ alert
+        if (retryCount < 1) {
+          console.warn("ลอง init LIFF อีกครั้ง...");
+          setTimeout(() => initLiff(retryCount + 1), 500);
+        } else {
+          alert("เกิดข้อผิดพลาด LIFF init ลองโหลดหน้าใหม่อีกครั้ง");
+        }
+      }
+    }
+
+    window.onload = () => initLiff();
+  </script>
 
 </body>
 </html>
