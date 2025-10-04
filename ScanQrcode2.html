@@ -317,13 +317,19 @@ function showPopupWithSelection(dataArray, callback){
     btn.style.width = "100%";
     btn.style.padding = "10px";
     btn.style.fontSize = "1rem";
-    btn.textContent = `${row.CustomerName || '-'}  ${row.BillingPostCode || '-'}  Tracking: ${row.TrackingCode || '-'}`;
+
+     // ใช้ชื่อ field จริงจาก Apps Script
+    const name = row.CustomerName || row.Name || '';
+    const code = row.BillingPostCode || row.PostCode || '';
+    const tracking = row.TrackingCode || row.Code || '';
+    
+   btn.textContent = `${name}  ${code}  ${tracking}`;
     btn.onclick = () => {
-      popup.style.display = "none";
-      if(callback) callback(row);
-    };
-    btnContainer.appendChild(btn);
-  });
+    popup.style.display = "none";
+    if(callback) callback(row);
+  };
+  btnContainer.appendChild(btn);
+});
 
   // ปุ่ม "ไม่พบข้อมูล"
   const skipBtn = document.createElement("button");
