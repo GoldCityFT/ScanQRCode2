@@ -258,79 +258,59 @@ itemSelect.addEventListener("change", updateColors);
 async function main() {
   const loadingModal = document.getElementById("loadingModal");
  
-  try {
-  await liff.init({ liffId: "2008187346-LZW3ndvO" }); // 2007956346-G5BmkAQl
-  if (!liff.isLoggedIn()) return liff.login();
+ try {
+    // --- LIFF init ---
+    await liff.init({ liffId: "2008187346-LZW3ndvO" });
+    if (!liff.isLoggedIn()) return liff.login();
 
-  // --- โหลด UserId ---
-  const profile = await liff.getProfile();
-  const userId = profile.userId;
-  document.getElementById("UserId").value = profile.userId;
+    const profile = await liff.getProfile();
+    document.getElementById("UserId").value = profile.userId;
 
-  // --- โหลด Tracking ---
-  const trackingCode = sessionStorage.getItem('tracking') || '';
-  document.getElementById('Tracking').value = trackingCode;
+    // --- Tracking ---
+    const trackingCode = sessionStorage.getItem('tracking') || '';
+    document.getElementById('Tracking').value = trackingCode;
 
-  if(!trackingCode){
-     // hide loading แล้วแจ้ง modal tracking หาย
-    loadingModal.style.display = "none";
-    modal.querySelector("p").textContent = '❌ ไม่พบ QR Code ที่สแกน กรุณาสแกนก่อน';
-    modal.style.display = "flex";
-    okBtn.onclick = () => {
-      modal.style.display = "none";
-      window.location.href = "ScanQrcode2.html";
-    };
-    return;
-  }
-    
-const SECRET_TOKEN = "Gl0D$Yt1@"; 
-const GET_URL = `https://script.google.com/macros/s/AKfycbyklv9SQB7L2WdrTjHRuwZkm9UB0zime9s8v8gutC2p3VcVPQB1Pd3I8rZoQA_v63zx/exec?token=${SECRET_TOKEN}&UserId=${profile.userId}`;
-const res = await fetch(GET_URL);
-const result = await res.json();   
+    if(!trackingCode){
+      loadingModal.style.display = "none";
+      modal.querySelector("p").textContent = '❌ ไม่พบ QR Code กรุณาสแกนก่อน';
+      modal.style.display = "flex";
+      okBtn.onclick = () => { 
+        modal.style.display = "none"; 
+        window.location.href = "ScanQrcode2.html"; 
+      };
+      return;
+    }
     
    // โหลดข้อมูลจาก ScanQrcode2 (fallback)
 
-if(result.success && result.data.length > 0){
-  const sheetData = result.data[0];
-  
-  // ตรวจสอบ field จริง ๆ ก่อนใช้
-  const hasValidData = sheetData.DisplayName || sheetData.PostCode || sheetData.Location;
-  
-  if(hasValidData){
-    if(sheetData.DisplayName) document.querySelector("input[name='DisplayName']").value = sheetData.DisplayName;
-    if(sheetData.Location) document.querySelector("input[name='Location']").value = sheetData.Location;
-    if(sheetData.PostCode) document.querySelector("input[name='PostCode']").value = sheetData.PostCode;
-  } else {
-    // fallback ไป ScanQrcode2
-    useFallback();
-  }
-} else {
-  useFallback();
-}
+try {
+  const SECRET_TOKEN = "Gl0D$Yt1@"; 
+  const GET_URL = `https://script.google.com/macros/s/AKfycbyklv9SQB7L2WdrTjHRuwZkm9UB0zime9s8v8gutC2p3VcVPQB1Pd3I8rZoQA_v63zx/exec?token=${SECRET_TOKEN}&UserId=${profile.userId}`;
 
-// ฟังก์ชัน fallback
-function useFallback(){
-  const fallbackData = JSON.parse(sessionStorage.getItem('selectedRow') || '{}');
-  if(fallbackData && Object.keys(fallbackData).length > 0){
-    document.getElementById('Tracking').value = fallbackData.TrackingCode || '';
-    document.querySelector("input[name='DisplayName']").value = fallbackData.CustomerName || '';
-    document.querySelector("input[name='PostCode']").value = fallbackData.BillingPostCode || '';
-    document.querySelector("input[name='Location']").value = fallbackData.BillingAddr || '';
-  }
-}
+   const res = await fetch(GET_URL);
+    const result = await res.json();
+
+    if(result.lastData){
+      const data = result.lastData;
+      if(data.DisplayName) document.querySelector("input[name='DisplayName']").value = data.DisplayName;
+      if(data.Location) document.querySelector("input[name='Location']").value = data.Location;
+      if(data.PostCode) document.querySelector("input[name='PostCode']").value = data.PostCode;
+    } else {
+      // fallback จาก sessionStorage
+      const fallback = JSON.parse(sessionStorage.getItem('selectedRow') || '{}');
+      document.getElementById('Tracking').value = fallback.TrackingCode || '';
+      document.querySelector("input[name='DisplayName']").value = fallback.CustomerName || '';
+      document.querySelector("input[name='PostCode']").value = fallback.BillingPostCode || '';
+      document.querySelector("input[name='Location']").value = fallback.BillingAddr || '';
     }
-  } catch(err){
-    console.error("Error fetching last data:", err);
-    // แจ้งผู้ใช้ว่าโหลดข้อมูลไม่สำเร็จ
-    modal.querySelector("p").textContent = '⚠️ โหลดข้อมูลไม่สำเร็จ โปรดลองอีกครั้ง';
-    modal.style.display = "flex";
-    okBtn.onclick = () => window.location.reload();
-  }finally {
-  
-   // ทุกอย่างโหลดเสร็จ → ซ่อน loading + แสดง form
-  loadingModal.style.display = "none";
-  form.style.display = "block";
-}
+
+  } catch(err) {
+    console.error("Fetch lastData error:", err);
+  } finally {
+    // ซ่อน loading และแสดง form หลังทุกอย่างเสร็จ
+    loadingModal.style.display = "none";
+    form.style.display = "block";
+  }
 }
   
 main();
