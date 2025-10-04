@@ -229,6 +229,7 @@ html, body {
 <div id="popupAlert">
   <div id="popupAlertContent">
     <p id="popupAlertText">ข้อความแจ้งเตือน</p>
+    <div id="popupAlertButtons"></div> <!-- สำหรับปุ่มเลือก Customer -->
   </div>
 </div>
 
@@ -324,27 +325,52 @@ document.getElementById('popupLostBtn').onclick = () => {
 
 function showPopupWithSelection(dataArray, callback){
   const popup = document.getElementById("popupAlert");
-  const text = document.getElementById("popupAlertText");
+  const btnContainer = document.getElementById("popupAlertButtons");
 
-  // ล้างเนื้อหาเก่า
-  text.innerHTML = "";
+  // ล้างปุ่มเก่า
+  btnContainer.innerHTML = "";
 
-  // สร้างปุ่มสำหรับแต่ละแถว
-  dataArray.forEach((row, idx) => {
+  // สร้าง label แนะนำ
+  const label = document.createElement("p");
+  label.textContent = "กรุณาเลือกชื่อของท่าน";
+  label.style.fontWeight = "bold";
+  label.style.marginBottom = "10px";
+  btnContainer.appendChild(label);
+
+  // ปุ่มสำหรับแต่ละ Customer
+  dataArray.forEach((row) => {
     const btn = document.createElement("button");
     btn.style.margin = "5px 0";
     btn.style.width = "100%";
     btn.style.padding = "10px";
-    btn.textContent = `Customer: ${row.CustomerName || '-'}\nPostCode: ${row.BillingPostCode || '-'}`;
+    btn.style.fontSize = "1rem";
+    btn.innerHTML = `${row.CustomerName || '-'}<br>${row.BillingPostCode || '-'} รหัส Tracking: ${row.TrackingCode || '-'}`;
     btn.onclick = () => {
       popup.style.display = "none";
-      if(callback) callback(row); // ส่ง row ที่เลือกกลับ
+      if(callback) callback(row);
     };
-    text.appendChild(btn);
+    btnContainer.appendChild(btn);
   });
 
+  // ปุ่ม "ไม่มีชื่อที่ตรงกัน"
+  const skipBtn = document.createElement("button");
+  skipBtn.style.marginTop = "10px";
+  skipBtn.style.width = "100%";
+  skipBtn.style.padding = "10px";
+  skipBtn.style.background = "#FF5722";
+  skipBtn.style.color = "white";
+  skipBtn.style.fontWeight = "bold";
+  skipBtn.textContent = "ไม่มีชื่อที่ตรงกัน → ข้ามไป Form2";
+  skipBtn.onclick = () => {
+    popup.style.display = "none";
+    window.location.href = "Form2.html";
+  };
+  btnContainer.appendChild(skipBtn);
+
+  // แสดง popup
   popup.style.display = "flex";
 }
+
 
   
 // ใช้กับทั้ง QR และ Manual
