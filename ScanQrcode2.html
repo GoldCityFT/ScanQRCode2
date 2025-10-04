@@ -279,7 +279,7 @@ function showPopup(data, callback){
   const popup = document.getElementById("popupAlert");
   const text = document.getElementById("popupAlertText");
 
-  if(data.OrderNo){
+  if(data.TrackingCode){
     text.innerHTML = `
       <strong>CustomerName:</strong> ${data.CustomerName || '-'} <br>
       <strong>BillingAddr:</strong> ${data.BillingAddr} <br>
@@ -335,7 +335,7 @@ function showPopupWithSelection(dataArray, callback){
     btn.style.margin = "5px 0";
     btn.style.width = "100%";
     btn.style.padding = "10px";
-    btn.textContent = `OrderNo: ${row.OrderNo}, ItemCode: ${row.ItemCode}`;
+    btn.textContent = `TrackingCode: ${row.CustomerName || '-'}\nPostCode: ${row.BillingPostCode || '-'}`;;
     btn.onclick = () => {
       popup.style.display = "none";
       if(callback) callback(row); // ส่ง row ที่เลือกกลับ
