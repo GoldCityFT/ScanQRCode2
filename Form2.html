@@ -257,6 +257,7 @@ itemSelect.addEventListener("change", updateColors);
 
 async function main() {
   const loadingModal = document.getElementById("loadingModal");
+  const form = document.getElementById("surveyForm");
   
   await liff.init({ liffId: "2008187346-LZW3ndvO" }); // 2007956346-G5BmkAQl
   if (!liff.isLoggedIn()) return liff.login();
@@ -282,19 +283,29 @@ async function main() {
     return;
   }
 
+   // โหลดข้อมูลจาก ScanQrcode2 (fallback)
+const fallbackData = JSON.parse(sessionStorage.getItem('selectedRow') || '{}');
+if(fallbackData){
+  document.getElementById('Tracking').value = fallbackData.TrackingCode || '';
+  document.querySelector("input[name='DisplayName']").value = fallbackData.CustomerName || '';
+  document.querySelector("input[name='PostCode']").value = fallbackData.BillingPostCode || '';
+  document.querySelector("input[name='Location']").value = fallbackData.BillingAddr || '';
+}
   // --- Prefill ข้อมูลจาก GAS ---
   try {
     const SECRET_TOKEN = "Gl0D$Yt1@";
+    
+    if(trackingCode){
     const GET_URL = `https://script.google.com/macros/s/AKfycbyklv9SQB7L2WdrTjHRuwZkm9UB0zime9s8v8gutC2p3VcVPQB1Pd3I8rZoQA_v63zx/exec?token=${SECRET_TOKEN}&UserId=${profile.userId}`;
     const res = await fetch(GET_URL);
     const result = await res.json();
 
-    if (!result.isFirstTime && result.lastData){
-      const data = result.lastData;
+    if(result.success && result.data.length > 0){
+      const sheetData = result.data[0];
 
-      if(data.DisplayName) document.querySelector("input[name='DisplayName']").value = data.DisplayName;
-      if(data.Location) document.querySelector("input[name='Location']").value = data.Location;
-      if(data.PostCode) document.querySelector("input[name='PostCode']").value = data.PostCode;
+      if(sheetData.DisplayName) document.querySelector("input[name='DisplayName']").value = sheetData.DisplayName;
+      if(sheetData.Location) document.querySelector("input[name='Location']").value = sheetData.Location;
+      if(sheetData.PostCode) document.querySelector("input[name='PostCode']").value = sheetData.PostCode;
     }
   } catch(err){
     console.error("Error fetching last data:", err);
