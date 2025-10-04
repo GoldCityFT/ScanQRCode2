@@ -335,7 +335,7 @@ function showPopupWithSelection(dataArray, callback){
     btn.style.margin = "5px 0";
     btn.style.width = "100%";
     btn.style.padding = "10px";
-    btn.textContent = `TrackingCode: ${row.CustomerName || '-'}\nPostCode: ${row.BillingPostCode || '-'}`;;
+    btn.textContent = `Customer: ${row.CustomerName || '-'}\nPostCode: ${row.BillingPostCode || '-'}`;
     btn.onclick = () => {
       popup.style.display = "none";
       if(callback) callback(row); // ส่ง row ที่เลือกกลับ
