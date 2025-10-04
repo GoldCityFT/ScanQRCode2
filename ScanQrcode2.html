@@ -301,7 +301,11 @@ document.getElementById('popupLostBtn').onclick = () => {
 
 function showPopupWithSelection(dataArray, callback){
   const popup = document.getElementById("popupAlert");
+  const text = document.getElementById("popupAlertText");
   const btnContainer = document.getElementById("popupAlertButtons");
+
+  // ข้อความนำ
+  text.textContent = "กรุณาเลือกข้อมูลของท่าน";
 
   // ล้างปุ่มเก่า
   btnContainer.innerHTML = "";
@@ -313,7 +317,7 @@ function showPopupWithSelection(dataArray, callback){
     btn.style.width = "100%";
     btn.style.padding = "10px";
     btn.style.fontSize = "1rem";
-    btn.innerHTML = `${row.CustomerName || '-'}<br>${row.BillingPostCode || '-'} รหัส Tracking: ${row.TrackingCode || '-'}`;
+    btn.textContent = `${row.CustomerName || '-'}  ${row.BillingPostCode || '-'}  Tracking: ${row.TrackingCode || '-'}`;
     btn.onclick = () => {
       popup.style.display = "none";
       if(callback) callback(row);
@@ -321,7 +325,7 @@ function showPopupWithSelection(dataArray, callback){
     btnContainer.appendChild(btn);
   });
 
-  // ปุ่ม "ไม่มีชื่อที่ตรงกัน"
+  // ปุ่ม "ไม่พบข้อมูล"
   const skipBtn = document.createElement("button");
   skipBtn.style.marginTop = "10px";
   skipBtn.style.width = "100%";
@@ -329,16 +333,15 @@ function showPopupWithSelection(dataArray, callback){
   skipBtn.style.background = "#FF5722";
   skipBtn.style.color = "white";
   skipBtn.style.fontWeight = "bold";
-  skipBtn.textContent = "ไม่มีชื่อที่ตรงกัน → ข้ามไป Form2";
+  skipBtn.textContent = "ไม่พบข้อมูล";
   skipBtn.onclick = () => {
     popup.style.display = "none";
-    window.location.href = "Form2.html"; // ไปหน้า Form2
+    window.location.href = "Form2.html";
   };
   btnContainer.appendChild(skipBtn);
 
-  // แสดง popup
   popup.style.display = "flex";
-}
+  }
   
 // ใช้กับทั้ง QR และ Manual
 async function processCode(code){
