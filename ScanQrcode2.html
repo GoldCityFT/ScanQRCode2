@@ -361,6 +361,7 @@ async function processCode(code){
     // --- แสดง popup ให้เลือกข้อมูล ---
     showPopupWithSelection(data.data, async (selectedRow) => {
       // เมื่อผู้ใช้เลือกแถว → ส่งไป backend
+      sessionStorage.setItem('selectedRow', JSON.stringify(selectedRow));
       try {
         await fetch('/api/updateTracking', {
           method: 'POST',
