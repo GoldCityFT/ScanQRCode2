@@ -48,63 +48,59 @@ p
   <p>กำลังตรวจสอบ LINE login …</p>
   
  <script>
-  async function loadLiffSDK() {
-    if (window.liff) return;
-    return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = "https://static.line-scdn.net/liff/edge/2/sdk.js";
-      script.onload = resolve;
-      script.onerror = () => reject("โหลด LIFF SDK ไม่สำเร็จ");
-      document.head.appendChild(script);
-    });
-  }
+async function loadLiffSDK() {
+  if (window.liff) return;
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = "https://static.line-scdn.net/liff/edge/2/sdk.js";
+    script.onload = resolve;
+    script.onerror = () => reject("โหลด LIFF SDK ไม่สำเร็จ");
+    document.head.appendChild(script);
+  });
+}
 
-  async function initLiffSafe(retry = 0) {
-    try {
-      await loadLiffSDK();
-      await liff.init({ liffId: "2008187346-LZW3ndvO" });
+async function initLiffSafe(retry = 0) {
+  try {
+    await loadLiffSDK();
+    await liff.init({ liffId: "2008187346-LZW3ndvO" });
 
-      // ตรวจสอบว่า LIFF พร้อมจริง
-      if (!liff.isApiAvailable("getProfile")) {
-        throw "LIFF API ไม่พร้อมใช้งาน";
-      }
+    // ตรวจสอบว่า LIFF API พร้อมใช้งาน
+    if (!liff.isApiAvailable("getProfile")) throw "LIFF API ไม่พร้อมใช้งาน";
 
-      // ป้องกัน reload loop
-      const alreadyReset = sessionStorage.getItem("alreadyReset");
+    const alreadyReset = sessionStorage.getItem("alreadyReset");
 
-      if (liff.isLoggedIn() && !alreadyReset) {
-        sessionStorage.clear();           // ล้าง session เก่า
-        sessionStorage.setItem("alreadyReset", "true");
-        window.location.reload();         // รีเฟรชใหม่
-        return;
-      }
+    if (liff.isLoggedIn() && !alreadyReset) {
+      sessionStorage.clear();           
+      sessionStorage.setItem("alreadyReset", "true");
+      window.location.reload();         
+      return;
+    }
 
-      if (!liff.isLoggedIn()) {
-        sessionStorage.clear();           // ล้าง session ก่อน login
-        liff.login();                     // login ใหม่
-        return;
-      }
+    if (!liff.isLoggedIn()) {
+      sessionStorage.clear();           
+      liff.login();                     
+      return;
+    }
 
-      // login สำเร็จ → ไปหน้า ScanQrcode
-      window.location.href = "ScanQrcode2.html";
+    // login สำเร็จ → ไปหน้า ScanQrcode
+    window.location.href = "ScanQrcode2.html";
 
-    } catch (err) {
-      console.warn("LIFF init error:", err);
+  } catch (err) {
+    console.warn("LIFF init error:", err);
 
-      // ถ้า retry ยังไม่ถึง limit
-      if (retry < 1) {
-        console.log("ลอง init LIFF อีกครั้ง...");
-        setTimeout(() => initLiffSafe(retry + 1), 500);
-      } else {
-        // ถ้า fail ต่อเนื่อง → รีเฟรชใหม่แบบอัตโนมัติ
-        console.log("LIFF init fail หลัง retry → ล้าง session + reload หน้าใหม่");
-        sessionStorage.clear();
-        window.location.reload();
-      }
+    if (retry < 1) {
+      console.log("ลอง init LIFF อีกครั้ง...");
+      setTimeout(() => initLiffSafe(retry + 1), 500);
+    } else {
+      console.log("LIFF init fail หลัง retry → ล้าง session + reload หน้าใหม่");
+      sessionStorage.clear();
+      window.location.reload();
     }
   }
+}
 
-  window.onload = initLiffSafe;
+window.onload = initLiffSafe;
+
 </script>
 
 
