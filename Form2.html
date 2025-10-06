@@ -295,17 +295,20 @@ async function main() {
     console.log("✅ result:", result);
 
     if (result.lastData) {
-      const data = result.lastData;
-      if (data.DisplayName) document.querySelector("input[name='DisplayName']").value = data.DisplayName;
-      if (data.Location) document.querySelector("input[name='Location']").value = data.Location;
-      if (data.PostCode) document.querySelector("input[name='PostCode']").value = data.PostCode;
+      const sheetData = result.lastData || {};
+    if (sheetData.DisplayName || sheetData.Location || sheetData.PostCode) {
+      // ✅ ใช้ข้อมูลจาก Google Sheet
+      if (sheetData.DisplayName) document.querySelector("input[name='DisplayName']").value = sheetData.DisplayName;
+      if (sheetData.Location) document.querySelector("input[name='Location']").value = sheetData.Location;
+      if (sheetData.PostCode) document.querySelector("input[name='PostCode']").value = sheetData.PostCode;
     } else {
-      // ❗ fallback จาก sessionStorage
+      // ⚙️ ถ้าไม่มีข้อมูลจาก Sheet ใช้ข้อมูลสำรองจาก sessionStorage
       const fallback = JSON.parse(sessionStorage.getItem("selectedRow") || "{}");
       document.querySelector("input[name='DisplayName']").value = fallback.CustomerName || "";
       document.querySelector("input[name='PostCode']").value = fallback.BillingPostCode || "";
       document.querySelector("input[name='Location']").value = fallback.BillingAddr || "";
     }
+  }  
   } catch (err) {
     console.error("🚨 main() error:", err);
     modal.querySelector("p").textContent = "เกิดข้อผิดพลาดในการโหลดข้อมูล โปรดลองอีกครั้ง";
@@ -316,6 +319,7 @@ async function main() {
     loadingModal.style.display = "none";
     form.style.display = "block";
   }
+
 }
 
 main();
