@@ -235,6 +235,7 @@ const colorSelect = document.getElementById("colorSelect");
 const form = document.getElementById("surveyForm");
 const modal = document.getElementById("modal");
 const okBtn = document.getElementById("okBtn");
+const loadingModal = document.getElementById("loadingModal");
 
 const colorOptions = {
   "รองเท้าแตะ": ["ดำ", "ขาว"],
@@ -244,7 +245,7 @@ const colorOptions = {
 function updateColors() {
   const selectedItem = itemSelect.value;
   colorSelect.innerHTML = '<option value="">-- เลือกสี --</option>';
-  if(selectedItem && colorOptions[selectedItem]){
+  if (selectedItem && colorOptions[selectedItem]) {
     colorOptions[selectedItem].forEach(color => {
       const option = document.createElement("option");
       option.value = color;
@@ -255,19 +256,23 @@ function updateColors() {
 }
 itemSelect.addEventListener("change", updateColors);
 
+// 🧠 helper: fetch พร้อม timeout ป้องกันค้าง
+async function fetchWithTimeout(resource, options = {}) {
+  const { timeout = 8000 } = options;
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  const response = await fetch(resource, { ...options, signal: controller.signal });
+  clearTimeout(id);
+  return response;
+}
+
 async function main() {
-  const loadingModal = document.getElementById("loadingModal");
- 
- try {
+  try {
     console.log("🟢 เริ่ม main()");
     await liff.init({ liffId: "2008187346-LZW3ndvO" });
-    if (!liff.isLoggedIn()) {
-      console.log("🔴 ยังไม่ login -> redirect login");
-      return liff.login();
-    }
+    if (!liff.isLoggedIn()) return liff.login();
 
     const profile = await liff.getProfile();
-    console.log("✅ ได้ profile:", profile.displayName);
     document.getElementById("UserId").value = profile.userId;
 
     const trackingCode = sessionStorage.getItem("tracking") || "";
@@ -285,30 +290,33 @@ async function main() {
       return;
     }
 
-    // ✅ โหลดข้อมูลจาก Google Sheet ก่อน
+    // ✅ โหลดข้อมูลจาก Google Sheet ก่อน (timeout ป้องกันค้าง)
     const SECRET_TOKEN = "Gl0D$Yt1@";
     const GET_URL = `https://script.google.com/macros/s/AKfycbyklv9SQB7L2WdrTjHRuwZkm9UB0zime9s8v8gutC2p3VcVPQB1Pd3I8rZoQA_v63zx/exec?token=${SECRET_TOKEN}&UserId=${profile.userId}`;
-
     console.log("🌐 Fetch:", GET_URL);
-    const res = await fetch(GET_URL);
-    const result = await res.json();
-    console.log("✅ result:", result);
 
-    if (result.lastData) {
-      const sheetData = result.lastData || {};
-    if (sheetData.DisplayName || sheetData.Location || sheetData.PostCode) {
-      // ✅ ใช้ข้อมูลจาก Google Sheet
-      if (sheetData.DisplayName) document.querySelector("input[name='DisplayName']").value = sheetData.DisplayName;
-      if (sheetData.Location) document.querySelector("input[name='Location']").value = sheetData.Location;
-      if (sheetData.PostCode) document.querySelector("input[name='PostCode']").value = sheetData.PostCode;
+    let result = {};
+    try {
+      const res = await fetchWithTimeout(GET_URL, { timeout: 8000 });
+      result = await res.json();
+    } catch (err) {
+      console.warn("⚠️ fetch timeout หรือ error", err);
+    }
+
+    // ✅ มีข้อมูลใน Sheet → ใช้ก่อน
+    if (result.lastData && (result.lastData.DisplayName || result.lastData.PostCode)) {
+      const d = result.lastData;
+      document.querySelector("input[name='DisplayName']").value = d.DisplayName || "";
+      document.querySelector("input[name='Location']").value = d.Location || "";
+      document.querySelector("input[name='PostCode']").value = d.PostCode || "";
     } else {
-      // ⚙️ ถ้าไม่มีข้อมูลจาก Sheet ใช้ข้อมูลสำรองจาก sessionStorage
+      // ⚙️ fallback จาก ScanQrcode2
       const fallback = JSON.parse(sessionStorage.getItem("selectedRow") || "{}");
       document.querySelector("input[name='DisplayName']").value = fallback.CustomerName || "";
-      document.querySelector("input[name='PostCode']").value = fallback.BillingPostCode || "";
       document.querySelector("input[name='Location']").value = fallback.BillingAddr || "";
+      document.querySelector("input[name='PostCode']").value = fallback.BillingPostCode || "";
     }
-    
+
   } catch (err) {
     console.error("🚨 main() error:", err);
     modal.querySelector("p").textContent = "เกิดข้อผิดพลาดในการโหลดข้อมูล โปรดลองอีกครั้ง";
@@ -319,47 +327,48 @@ async function main() {
     loadingModal.style.display = "none";
     form.style.display = "block";
   }
-
 }
 
 main();
 
-form.addEventListener("submit", function(event) {
+// 🟢 ส่งข้อมูล
+form.addEventListener("submit", function (event) {
+  event.preventDefault();
   const selectedItem = itemSelect.value;
   const selectedColor = colorSelect.value;
-  if(selectedItem && !selectedColor){
-    event.preventDefault();
+  if (selectedItem && !selectedColor) {
     modal.querySelector("p").textContent = "กรุณาเลือกสีด้วยครับ";
     modal.style.display = "flex";
-    okBtn.onclick = () => { modal.style.display = "none"; };
+    okBtn.onclick = () => (modal.style.display = "none");
     return;
   }
 
-  event.preventDefault();
   isSubmitted = true;
   form.submit();
   modal.querySelector("p").textContent = "กรอกข้อมูลสำเร็จ!";
   modal.style.display = "flex";
 
-  // ล้างเฉพาะ input
-  document.querySelector("input[name='DisplayName']").value = "";
-  document.querySelector("input[name='Location']").value = "";
-  document.querySelector("input[name='PostCode']").value = "";
+  // เคลียร์ค่า input
+  ["DisplayName", "Location", "PostCode"].forEach(name => {
+    document.querySelector(`input[name='${name}']`).value = "";
+  });
   itemSelect.value = "";
   colorSelect.innerHTML = '<option value="">-- เลือกสี --</option>';
 
-  // ล้าง tracking เฉพาะหลัง submit
-  sessionStorage.removeItem('tracking');
+  sessionStorage.removeItem("tracking");
 });
 
-// --- ส่ง UserId+Tracking ถ้า user ปิด/ย้อนกลับ ---
-document.addEventListener("visibilitychange", function() {
-  if(!isSubmitted && document.visibilityState==="hidden"){
+// 🟡 ส่ง beacon เผื่อปิดหน้า
+document.addEventListener("visibilitychange", function () {
+  if (!isSubmitted && document.visibilityState === "hidden") {
     const data = new FormData();
-    data.append('token','Gl0D$Yt1@');
-    data.append('UserId', document.getElementById('UserId').value);
-    data.append('Tracking', document.getElementById('Tracking').value);
-    navigator.sendBeacon("https://script.google.com/macros/s/AKfycbyklv9SQB7L2WdrTjHRuwZkm9UB0zime9s8v8gutC2p3VcVPQB1Pd3I8rZoQA_v63zx/exec", data);
+    data.append("token", "Gl0D$Yt1@");
+    data.append("UserId", document.getElementById("UserId").value);
+    data.append("Tracking", document.getElementById("Tracking").value);
+    navigator.sendBeacon(
+      "https://script.google.com/macros/s/AKfycbyklv9SQB7L2WdrTjHRuwZkm9UB0zime9s8v8gutC2p3VcVPQB1Pd3I8rZoQA_v63zx/exec",
+      data
+    );
   }
 });
 
@@ -367,7 +376,6 @@ okBtn.addEventListener("click", () => {
   modal.style.display = "none";
   liff.closeWindow();
 });
-  
 </script>
 </body>
 </html>
