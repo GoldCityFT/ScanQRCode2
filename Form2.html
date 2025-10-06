@@ -259,60 +259,65 @@ async function main() {
   const loadingModal = document.getElementById("loadingModal");
  
  try {
-    // --- LIFF init ---
+    console.log("🟢 เริ่ม main()");
     await liff.init({ liffId: "2008187346-LZW3ndvO" });
-    if (!liff.isLoggedIn()) return liff.login();
+    if (!liff.isLoggedIn()) {
+      console.log("🔴 ยังไม่ login -> redirect login");
+      return liff.login();
+    }
 
     const profile = await liff.getProfile();
+    console.log("✅ ได้ profile:", profile.displayName);
     document.getElementById("UserId").value = profile.userId;
 
-    // --- Tracking ---
-    const trackingCode = sessionStorage.getItem('tracking') || '';
-    document.getElementById('Tracking').value = trackingCode;
+    const trackingCode = sessionStorage.getItem("tracking") || "";
+    document.getElementById("Tracking").value = trackingCode;
+    console.log("📦 Tracking:", trackingCode);
 
-    if(!trackingCode){
+    if (!trackingCode) {
       loadingModal.style.display = "none";
-      modal.querySelector("p").textContent = '❌ ไม่พบ QR Code กรุณาสแกนก่อน';
+      modal.querySelector("p").textContent = "❌ ไม่พบ QR Code กรุณาสแกนก่อน";
       modal.style.display = "flex";
-      okBtn.onclick = () => { 
-        modal.style.display = "none"; 
-        window.location.href = "ScanQrcode2.html"; 
+      okBtn.onclick = () => {
+        modal.style.display = "none";
+        window.location.href = "ScanQrcode2.html";
       };
       return;
     }
-    
-   // โหลดข้อมูลจาก ScanQrcode2 (fallback)
 
-try {
-  const SECRET_TOKEN = "Gl0D$Yt1@"; 
-  const GET_URL = `https://script.google.com/macros/s/AKfycbyklv9SQB7L2WdrTjHRuwZkm9UB0zime9s8v8gutC2p3VcVPQB1Pd3I8rZoQA_v63zx/exec?token=${SECRET_TOKEN}&UserId=${profile.userId}`;
+    // ✅ โหลดข้อมูลจาก Google Sheet ก่อน
+    const SECRET_TOKEN = "Gl0D$Yt1@";
+    const GET_URL = `https://script.google.com/macros/s/AKfycbyklv9SQB7L2WdrTjHRuwZkm9UB0zime9s8v8gutC2p3VcVPQB1Pd3I8rZoQA_v63zx/exec?token=${SECRET_TOKEN}&UserId=${profile.userId}`;
 
-   const res = await fetch(GET_URL);
+    console.log("🌐 Fetch:", GET_URL);
+    const res = await fetch(GET_URL);
     const result = await res.json();
+    console.log("✅ result:", result);
 
-    if(result.lastData){
+    if (result.lastData) {
       const data = result.lastData;
-      if(data.DisplayName) document.querySelector("input[name='DisplayName']").value = data.DisplayName;
-      if(data.Location) document.querySelector("input[name='Location']").value = data.Location;
-      if(data.PostCode) document.querySelector("input[name='PostCode']").value = data.PostCode;
+      if (data.DisplayName) document.querySelector("input[name='DisplayName']").value = data.DisplayName;
+      if (data.Location) document.querySelector("input[name='Location']").value = data.Location;
+      if (data.PostCode) document.querySelector("input[name='PostCode']").value = data.PostCode;
     } else {
-      // fallback จาก sessionStorage
-      const fallback = JSON.parse(sessionStorage.getItem('selectedRow') || '{}');
-      document.getElementById('Tracking').value = fallback.TrackingCode || '';
-      document.querySelector("input[name='DisplayName']").value = fallback.CustomerName || '';
-      document.querySelector("input[name='PostCode']").value = fallback.BillingPostCode || '';
-      document.querySelector("input[name='Location']").value = fallback.BillingAddr || '';
+      // ❗ fallback จาก sessionStorage
+      const fallback = JSON.parse(sessionStorage.getItem("selectedRow") || "{}");
+      document.querySelector("input[name='DisplayName']").value = fallback.CustomerName || "";
+      document.querySelector("input[name='PostCode']").value = fallback.BillingPostCode || "";
+      document.querySelector("input[name='Location']").value = fallback.BillingAddr || "";
     }
-
-  } catch(err) {
-    console.error("Fetch lastData error:", err);
+  } catch (err) {
+    console.error("🚨 main() error:", err);
+    modal.querySelector("p").textContent = "เกิดข้อผิดพลาดในการโหลดข้อมูล โปรดลองอีกครั้ง";
+    modal.style.display = "flex";
+    okBtn.onclick = () => (modal.style.display = "none");
   } finally {
-    // ซ่อน loading และแสดง form หลังทุกอย่างเสร็จ
+    console.log("🟡 ซ่อน loading แสดงฟอร์ม");
     loadingModal.style.display = "none";
     form.style.display = "block";
   }
 }
-  
+
 main();
 
 form.addEventListener("submit", function(event) {
