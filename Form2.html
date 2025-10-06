@@ -256,7 +256,7 @@ function updateColors() {
 }
 itemSelect.addEventListener("change", updateColors);
 
-// 🧠 helper: fetch พร้อม timeout ป้องกันค้าง
+// 0 helper: fetch พร้อม timeout ป้องกันค้าง
 async function fetchWithTimeout(resource, options = {}) {
   const { timeout = 8000 } = options;
   const controller = new AbortController();
@@ -268,7 +268,7 @@ async function fetchWithTimeout(resource, options = {}) {
 
 async function main() {
   try {
-    console.log("🟢 เริ่ม main()");
+    console.log("เริ่ม main()");
     await liff.init({ liffId: "2008187346-LZW3ndvO" });
     if (!liff.isLoggedIn()) return liff.login();
 
@@ -277,7 +277,7 @@ async function main() {
 
     const trackingCode = sessionStorage.getItem("tracking") || "";
     document.getElementById("Tracking").value = trackingCode;
-    console.log("📦 Tracking:", trackingCode);
+    console.log("Tracking:", trackingCode);
 
     if (!trackingCode) {
       loadingModal.style.display = "none";
@@ -290,27 +290,27 @@ async function main() {
       return;
     }
 
-    // ✅ โหลดข้อมูลจาก Google Sheet ก่อน (timeout ป้องกันค้าง)
+    // โหลดข้อมูลจาก Google Sheet ก่อน (timeout ป้องกันค้าง)
     const SECRET_TOKEN = "Gl0D$Yt1@";
     const GET_URL = `https://script.google.com/macros/s/AKfycbyklv9SQB7L2WdrTjHRuwZkm9UB0zime9s8v8gutC2p3VcVPQB1Pd3I8rZoQA_v63zx/exec?token=${SECRET_TOKEN}&UserId=${profile.userId}`;
-    console.log("🌐 Fetch:", GET_URL);
+    console.log("Fetch:", GET_URL);
 
     let result = {};
     try {
       const res = await fetchWithTimeout(GET_URL, { timeout: 8000 });
       result = await res.json();
     } catch (err) {
-      console.warn("⚠️ fetch timeout หรือ error", err);
+      console.warn("fetch timeout หรือ error", err);
     }
 
-    // ✅ มีข้อมูลใน Sheet → ใช้ก่อน
+    // มีข้อมูลใน Sheet → ใช้ก่อน
     if (result.lastData && (result.lastData.DisplayName || result.lastData.PostCode)) {
       const d = result.lastData;
       document.querySelector("input[name='DisplayName']").value = d.DisplayName || "";
       document.querySelector("input[name='Location']").value = d.Location || "";
       document.querySelector("input[name='PostCode']").value = d.PostCode || "";
     } else {
-      // ⚙️ fallback จาก ScanQrcode2
+      // fallback จาก ScanQrcode2
       const fallback = JSON.parse(sessionStorage.getItem("selectedRow") || "{}");
       document.querySelector("input[name='DisplayName']").value = fallback.CustomerName || "";
       document.querySelector("input[name='Location']").value = fallback.BillingAddr || "";
@@ -318,12 +318,12 @@ async function main() {
     }
 
   } catch (err) {
-    console.error("🚨 main() error:", err);
+    console.error("main() error:", err);
     modal.querySelector("p").textContent = "เกิดข้อผิดพลาดในการโหลดข้อมูล โปรดลองอีกครั้ง";
     modal.style.display = "flex";
     okBtn.onclick = () => (modal.style.display = "none");
   } finally {
-    console.log("🟡 ซ่อน loading แสดงฟอร์ม");
+    console.log("ซ่อน loading แสดงฟอร์ม");
     loadingModal.style.display = "none";
     form.style.display = "block";
   }
@@ -331,7 +331,7 @@ async function main() {
 
 main();
 
-// 🟢 ส่งข้อมูล
+// ส่งข้อมูล
 form.addEventListener("submit", function (event) {
   event.preventDefault();
   const selectedItem = itemSelect.value;
@@ -358,7 +358,7 @@ form.addEventListener("submit", function (event) {
   sessionStorage.removeItem("tracking");
 });
 
-// 🟡 ส่ง beacon เผื่อปิดหน้า
+// ส่ง beacon เผื่อปิดหน้า
 document.addEventListener("visibilitychange", function () {
   if (!isSubmitted && document.visibilityState === "hidden") {
     const data = new FormData();
